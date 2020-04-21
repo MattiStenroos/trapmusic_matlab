@@ -20,7 +20,14 @@ function [ind_max,mu_max,mus] = trapscan_presetori(C_meas,L_scan,n_iter)
 % cite the paper, if you use the approach / this implementation.
 % If you do not have access to the paper, please send a request by email.
 %
-% v200420 (c) Matti Stenroos (matti.stenroos@aalto.fi)
+% trapmusic_matlab/trapscan_presetori.m
+% trapmusic_matlab is licensed under BSD 3-Clause License.
+% Copyright (c) 2020, Matti Stenroos.
+% All rights reserved.
+% The software comes without any warranty.
+%
+% v200421 Matti Stenroos, matti.stenroos@aalto.fi
+
 
 %number of sensors, number of source locations to scan
 [n_sens,n_scan] = size(L_scan);
@@ -65,9 +72,17 @@ for ITER = 1:n_iter
     %make the next out-projector
     if ITER<n_iter
         B(:,ITER) = L_scan(:,ind_max(ITER));
-        l = B(:,1:ITER);
-%         Qk = eye(n_sens)-l/(l'*l)*l';
-%         Qk = eye(n_sens)-l*((l'*l)\l');
-        Qk = eye(n_sens)-l*pinv(l);
+        l_found = B(:,1:ITER);
+        Qk = eye(n_sens)-l_found/(l_found'*l_found)*l_found';
+         % The above formula gives a 'near-singular' warning in the case,
+        % when there is not enough space left for rejection. This means
+        % that you have used the degrees-of-freedom of your lead field
+        % matrix i.e. you cannot project out more dimensions i.e. you are
+        % trying to extract too large number of sources.
+        %
+        % If you prefer to not see the warning, comment the above out and
+        % use the row below instead. But, I'd rather receive some kind of
+        % warning, when the estimation is likely to go wrong...
+%         Qk = eye(n_sens)-l_found*pinv(l_found);
     end
 end

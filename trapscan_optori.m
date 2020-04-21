@@ -23,7 +23,13 @@ function [ind_max,mu_max,eta_max,mus] = trapscan_optori(C_meas,L_scan,n_iter,dim
 % cite the paper, if you use the approach / this implementation.
 % If you do not have access to the paper, please send a request by email.
 %
-% v200420 (c)Matti Stenroos
+% trapmusic_matlab/trapscan_optori.m
+% trapmusic_matlab is licensed under BSD 3-Clause License.
+% Copyright (c) 2020, Matti Stenroos.
+% All rights reserved.
+% The software comes without any warranty.
+%
+% v200421 Matti Stenroos, matti.stenroos@aalto.fi
 
 if nargin<4
     dim_L = 3;
@@ -70,8 +76,8 @@ for ITER = 1:n_iter
         %if a source has already been found for this location, skip
         if any(ind_max(1:ITER-1)==I),continue;end
         %local lead field matrix for this source location
-        L = L_this(:,dim_L*I-(dim_L-1):dim_L*I);
-        UkL = UkL_this(:,dim_L*I-(dim_L-1):dim_L*I);
+        L = L_this(:,(dim_L*I-dim_L+1):dim_L*I);
+        UkL = UkL_this(:,(dim_L*I-dim_L+1):dim_L*I);
         %find the optimal orientation
         dtest = eig(UkL'*UkL,L'*L,'chol');
         maxcompindtest = 1;
@@ -85,8 +91,8 @@ for ITER = 1:n_iter
     %find the location index & orientation with the largest mu value
     [mm,mi] = max(mus(:,ITER));
     %generate these variables & get the orientation
-    L = L_this(:,dim_L*mi-(dim_L-1):dim_L*mi);
-    UkL = UkL_this(:,dim_L*mi-(dim_L-1):dim_L*mi);
+    L = L_this(:,(dim_L*mi-dim_L+1):dim_L*mi);
+    UkL = UkL_this(:,(dim_L*mi-dim_L+1):dim_L*mi);
     [Utest,dtest] = eig(UkL'*UkL,L'*L,'chol','vector');
     [~,maxcompindtest] = max(dtest);
     meta = Utest(:,maxcompindtest);
@@ -98,9 +104,19 @@ for ITER = 1:n_iter
     
     %make the next out-projector
     if ITER<n_iter
-        L = L_scan(:,dim_L*mi-(dim_L-1):dim_L*mi);
+        L = L_scan(:,(dim_L*mi-dim_L+1):dim_L*mi);
         B(:,ITER) = L*meta;
-        l = B(:,1:ITER);
-        Qk = eye(n_sens)-l/(l'*l)*l';
+        l_found = B(:,1:ITER);
+        Qk = eye(n_sens)-l_found/(l_found'*l_found)*l_found';
+        % The above formula gives a 'near-singular' warning in the case,
+        % when there is not enough space left for rejection. This means
+        % that you have used the degrees-of-freedom of your lead field
+        % matrix i.e. you cannot project out more dimensions i.e. you are
+        % trying to extract too large number of sources.
+        %
+        % If you prefer to not see the warning, comment the above out and
+        % use the row below instead. But, I'd rather receive some kind of
+        % warning, when the estimation is probably going to go wrong...
+        %Qk = eye(n_sens)-l_found*pinv(l_found);
     end
 end

@@ -11,7 +11,13 @@
 % this kind of over-simplified simulation for any serious assessment or
 % method comparison.
 %
-% v200421 copyright Matti Stenroos, matti.stenroos@aalto.fi
+% trapmusic_matlab/example_trapmusic.m
+% trapmusic_matlab is licensed under BSD 3-Clause License.
+% Copyright (c) 2020, Matti Stenroos.
+% All rights reserved.
+% The software comes without any warranty.
+%
+% v200421 Matti Stenroos, matti.stenroos@aalto.fi
 
 %% Prepare a forward model
 % Make a toy forward model that has 999 sources topographies and 60 sensors.
@@ -72,12 +78,12 @@ end
 
 %% Simulation 2, unknown / optimized orientation
 % Now, assume that L has 333 source locations and each source location has
-% three possible topographies. For L, this situation corresponds to "free
-% orientation" or "vector source". The TRAP MUSIC algorithm assumes that
-% each source location has a constant unknown orientation, and searches for
-% the orientation that most strongly projects to the signal space. This
-% corresponds to the typical formulations with optimal-orientation scalar
-% beamformers.
+% three possible (orthogonal) topographies. For L, this situation
+% corresponds to "free orientation" or "vector source". The TRAP MUSIC
+% algorithm assumes that each source location has a constant unknown
+% orientation, and searches for the orientation that most strongly projects
+% to the signal space. This corresponds to the typical formulations with
+% optimal-orientation scalar beamformers.
 
 n_truesources = 5; %how many sources there are
 n_iter = n_truesources + 2; %how many sources we guess there to be
@@ -105,13 +111,22 @@ for I=1:n_rep
     %pSNRtest = trace(C0)/trace(C_noise);
     C_meas = C0 + C_noise;
     %do a TRAP scan with optimized orientations
-    [sourceinds_trap, mu_max, eta_temp] = trapscan_optori(C_meas, L, n_iter);
+    [sourceinds_trap, mu_max, eta_mumax] = trapscan_optori(C_meas, L, n_iter);
     %check how it went
     [~, subind_false] = setdiff(sourceinds_trap,sourceinds_true);
     subind_true = setdiff(1:n_iter,subind_false);
     n_false = numel(subind_false);
     mu_truemin = min(mu_max(subind_true));
     mu_falsemax = max(mu_max(subind_false));
+    
+    [ind_match, ia, ib] = intersect(sourceinds_true,sourceinds_trap);
+    oris_found = eta_mumax(ib,:);
+    oris_ref = sourceoris_true(ia,:);
+    oris_diff = acosd(round(abs(sum((oris_ref./sum(oris_ref.^2,2)).*(oris_found./sum(oris_found.^2,2)),2)),6));
+
     fprintf('%2d: found %d/%d sources, min(mu_true) = %.2f, max(mu_false) = %.2f\n',...
         I, n_iter - n_false, n_truesources, mu_truemin, mu_falsemax); 
+    fprintf('    orientation errors: min %.2f deg, max %.2f deg.\n',...
+        min(oris_diff),max(oris_diff)); 
+    
 end
