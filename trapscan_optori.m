@@ -29,7 +29,7 @@ function [ind_max,mu_max,eta_max,mus] = trapscan_optori(C_meas,L_scan,n_iter,dim
 % All rights reserved.
 % The software comes without any warranty.
 %
-% v200421 Matti Stenroos, matti.stenroos@aalto.fi
+% v200422 Matti Stenroos, matti.stenroos@aalto.fi
 
 if nargin<4
     dim_L = 3;
