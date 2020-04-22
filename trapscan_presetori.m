@@ -26,7 +26,7 @@ function [ind_max,mu_max,mus] = trapscan_presetori(C_meas,L_scan,n_iter)
 % All rights reserved.
 % The software comes without any warranty.
 %
-% v200421 Matti Stenroos, matti.stenroos@aalto.fi
+% v200422 Matti Stenroos, matti.stenroos@aalto.fi
 
 
 %number of sensors, number of source locations to scan
