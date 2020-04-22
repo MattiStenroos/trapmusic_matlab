@@ -19,8 +19,8 @@ function [ind_max,mu_max,eta_max,mus] = trapscan_optori(C_meas,L_scan,n_iter,dim
 % Makela, Stenroos, Sarvas, Ilmoniemi. Truncated RAP-MUSIC (TRAP-MUSIC) for
 % MEG and EEG source localization. NeuroImage 167(2018):73--83.
 % https://doi.org/10.1016/j.neuroimage.2017.11.013
-% For further information, please see the paper. We also kindly ask you to 
-% cite the paper, if you use the approach / this implementation.
+% For further information, please see the paper. I also kindly ask you to 
+% cite the paper, if you use the approach and/or this implementation.
 % If you do not have access to the paper, please send a request by email.
 %
 % trapmusic_matlab/trapscan_optori.m
@@ -107,16 +107,30 @@ for ITER = 1:n_iter
         L = L_scan(:,(dim_L*mi-dim_L+1):dim_L*mi);
         B(:,ITER) = L*meta;
         l_found = B(:,1:ITER);
-        Qk = eye(n_sens)-l_found/(l_found'*l_found)*l_found';
-        % The above formula gives a 'near-singular' warning in the case,
-        % when there is not enough space left for rejection. This means
-        % that you have used the degrees-of-freedom of your lead field
-        % matrix i.e. you cannot project out more dimensions i.e. you are
-        % trying to extract too large number of sources.
-        %
-        % If you prefer to not see the warning, comment the above out and
-        % use the row below instead. But, I'd rather receive some kind of
-        % warning, when the estimation is probably going to go wrong...
-        %Qk = eye(n_sens)-l_found*pinv(l_found);
+        
+        % Next, out-projecting. Typically it would go like this:
+        % Qk = eye(n_sens)-l_found/(l_found'*l_found)*l_found';
+        % But, this formula gives a 'near-singular' warning in the case,
+        % when the topographies of the already-found sources are (nearly)
+        % linearly dependent. This could happed due to two or more (nearly)
+        % identical source topographies or due to trying to separate more
+        % sources than the forward model supports. To avoid the Matlab warning,
+        % let us analyze the condition and inform about ill conditioning.
+        % We could also use 'pinv', but then we would not know about the problem.
+        
+        %check for the conditioning
+        [U,S] = svd(l_found'*l_found,'econ');
+        s = diag(S);
+        tol = 10*eps(s(1))*ITER; %a bit lower tolerance than in 'pinv'
+        keep = sum(s>tol);
+        if keep<ITER
+            %truncated pseudoinverse and out-projection
+            fprintf('trapscan_optori: Ill conditioning in out-projection at iteration %d.\n',ITER);
+            fprintf('                 You are likely trying to find more sources than the model supports.\n');
+            Qk = eye(n_sens) - l_found*U(:,1:keep)*diag(1./s(1:keep))*U(:,1:keep)'*l_found';
+        else
+            %normal pseudoinverse and out-projection
+            Qk = eye(n_sens) - l_found*U*diag(1./s)*U'*l_found';
+        end         
     end
 end
