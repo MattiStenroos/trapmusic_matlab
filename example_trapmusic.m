@@ -17,7 +17,7 @@
 % All rights reserved.
 % The software comes without any warranty.
 %
-% v200421 Matti Stenroos, matti.stenroos@aalto.fi
+% v200424 Matti Stenroos, matti.stenroos@aalto.fi
 
 %% Prepare a forward model
 % Make a toy forward model that has 999 sources topographies and 60 sensors.
@@ -122,7 +122,7 @@ for I=1:n_rep
     [ind_match, ia, ib] = intersect(sourceinds_true,sourceinds_trap);
     oris_found = eta_mumax(ib,:);
     oris_ref = sourceoris_true(ia,:);
-    oris_diff = acosd(round(abs(sum((oris_ref./sum(oris_ref.^2,2)).*(oris_found./sum(oris_found.^2,2)),2)),6));
+    oris_diff = acosd(round(abs(sum((oris_ref./sqrt(sum(oris_ref.^2,2))).*(oris_found./sqrt(sum(oris_found.^2,2))),2)),6));
 
     fprintf('%2d: found %d/%d sources, min(mu_true) = %.2f, max(mu_false) = %.2f\n',...
         I, n_iter - n_false, n_truesources, mu_truemin, mu_falsemax); 
